@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PassPrivacy Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ios-bg: #f2f2f7;
+            --glass: rgba(255, 255, 255, 0.4);
+            --glass-thick: rgba(255, 255, 255, 0.8);
+            --accent: #007AFF;
+            --secondary: #5856D6;
+            --text-main: #1C1C1E;
+            --text-sec: #8E8E93;
+            --spring: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background-color: var(--ios-bg);
+            margin: 0;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: env(safe-area-inset-top) 20px 100px;
+            overflow-x: hidden;
+        }
+
+        /* --- Animations --- */
+        .reveal {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.8s var(--spring);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* --- Layout --- */
+        .container { width: 100%; max-width: 480px; text-align: center; }
+
+        header {
+            margin: 50px 0 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+
+        .app-intro { margin-bottom: 30px; line-height: 1.6; text-align: center; }
+        .app-intro h3 { margin: 0 0 8px 0; font-weight: 700; font-size: 22px; }
+        .app-intro p { margin: 0; font-size: 15px; color: var(--text-sec); }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--glass-thick);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            transition: transform 0.4s var(--spring);
+            text-align: center;
+        }
+        
+        .stat-card:hover { transform: scale(1.03); }
+
+        .stat-card b { font-size: 26px; color: var(--accent); display: block; margin-top: 5px; }
+        .stat-card span { font-size: 14px; font-weight: 600; color: var(--text-sec); }
+
+        /* Search & Input */
+        .search-glass {
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            outline: none;
+            margin-bottom: 20px;
+            transition: 0.4s var(--spring);
+        }
+        .search-glass:focus { transform: scale(1.02); background: white; }
+
+        .input-group {
+            background: white;
+            padding: 8px;
+            border-radius: 18px;
+            display: flex;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        input { flex: 1; border: none; outline: none; padding: 10px; font-size: 16px; background: none; }
+
+        .btn-plus {
+            background: var(--accent);
+            color: white; border: none;
+            width: 44px; height: 44px;
+            border-radius: 14px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.3s var(--spring);
+        }
+        .btn-plus:active { transform: scale(0.85); }
+        .btn-icon { background: transparent; color: var(--text-sec); box-shadow: none; width: 38px; height: 38px; }
+
+        /* App Cards */
+        .app-item {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: all 0.4s var(--spring);
+        }
+        .app-item:active { transform: scale(0.96); }
+
+        .icon-box {
+            width: 46px; height: 46px;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 800; font-size: 20px;
+        }
+
+        /* --- Sheet (النافذة المصغرة) --- */
+        .overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px); display: none; z-index: 1000;
+            align-items: flex-end; justify-content: center;
+        }
+
+        .sheet {
+            background: var(--ios-bg);
+            width: 100%; max-width: 500px; border-radius: 28px 28px 0 0;
+            padding: 20px 15px 35px; /* تم تصغير الحواف */
+            transform: translateY(100%);
+            transition: transform 0.5s var(--spring);
+            max-height: 80vh; overflow-y: auto;
+        }
+
+        .sheet.active { transform: translateY(0); }
+        
+        .sheet .input-group {
+            padding: 5px; margin-bottom: 15px; border-radius: 14px;
+            background: rgba(0,0,0,0.04); box-shadow: none;
+        }
+        
+        .sheet .btn-plus { width: 38px; height: 38px; border-radius: 10px; }
+        
+        .sheet .app-item { padding: 10px 15px; margin-bottom: 8px; border-radius: 14px; }
+
+        #toast {
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: #1C1C1E; color: white; padding: 12px 25px; border-radius: 50px;
+            font-weight: 600; z-index: 4000; transition: 0.6s var(--spring);
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* --- Tutorial Overlay --- */
+        .tutorial-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            z-index: 5000; display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.6s ease;
+        }
+        .tutorial-overlay.hidden { opacity: 0; pointer-events: none; }
+        .tutorial-card {
+            background: white; border-radius: 28px; padding: 35px 25px 25px;
+            width: 90%; max-width: 340px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transform: scale(1); transition: transform 0.6s var(--spring);
+        }
+        .tutorial-overlay.hidden .tutorial-card { transform: scale(0.9) translateY(30px); }
+        .tut-step { display: none; animation: fadeInStep 0.6s var(--spring) forwards; }
+        .tut-step.active { display: block; }
+        .tut-icon { color: var(--accent); margin-bottom: 20px; animation: float 3s ease-in-out infinite; display:flex; justify-content:center;}
+        .tut-step h3 { margin: 0 0 10px; font-size: 20px; color: var(--text-main); }
+        .tut-step p { margin: 0; font-size: 15px; color: var(--text-sec); line-height: 1.5; }
+        .tut-progress { display: flex; gap: 6px; justify-content: center; margin-top: 25px; }
+        .tut-dot { width: 8px; height: 8px; border-radius: 4px; background: #e5e5ea; transition: 0.4s var(--spring); }
+        .tut-dot.active { width: 20px; background: var(--accent); }
+        .tut-btn {
+            background: var(--accent); color: white; border: none;
+            padding: 14px; border-radius: 16px; font-size: 16px;
+            font-weight: 700; margin-top: 25px; cursor: pointer; width: 100%;
+            transition: transform 0.3s var(--spring);
+        }
+        .tut-btn:active { transform: scale(0.95); }
+
+        /* Language Pop */
+        .lang-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(8px); display: none; z-index: 3000;
+            align-items: center; justify-content: center;
+        }
+        .lang-card {
+            background: white; width: 260px; border-radius: 22px; padding: 12px;
+            transform: scale(0.8) translateY(20px); opacity: 0; transition: all 0.4s var(--spring);
+        }
+        .lang-card.show { transform: scale(1) translateY(0); opacity: 1; }
+        .lang-option {
+            padding: 14px; margin: 4px 0; border-radius: 12px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 700; font-size: 15px;
+        }
+        .lang-option:hover { background: var(--ios-bg); }
+        .lang-option.active { color: var(--accent); background: rgba(0,122,255,0.08); }
+
+        @keyframes fadeInStep { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-overlay" class="tutorial-overlay">
+    <div class="tutorial-card">
+        <div class="tut-step step-1 active">
+            <div class="tut-icon" id="icon-tut-1"></div>
+            <h3 id="ui-tut-t1">Add Application</h3>
+            <p id="ui-tut-d1">Type the app or website name and press (+).</p>
+        </div>
+        <div class="tut-step step-2">
+            <div class="tut-icon" id="icon-tut-2"></div>
+            <h3 id="ui-tut-t2">Generate Password</h3>
+            <p id="ui-tut-d2">Create your own password or let us generate a strong one for you.</p>
+        </div>
+        <div class="tut-step step-3">
+            <div class="tut-icon" id="icon-tut-3"></div>
+            <h3 id="ui-tut-t3">Save & Reveal</h3>
+            <p id="ui-tut-d3">Save it securely. You can copy or reveal it whenever you need.</p>
+        </div>
+        
+        <div class="tut-progress">
+            <div class="tut-dot dot-1 active"></div>
+            <div class="tut-dot dot-2"></div>
+            <div class="tut-dot dot-3"></div>
+        </div>
+        <button class="tut-btn" id="ui-tut-btn" onclick="closeTutorial()">Let's Start</button>
+    </div>
+</div>
+
+<div id="toast">Copied!</div>
+
+<div class="lang-modal" id="lang-modal" onclick="closeLangPop()">
+    <div class="lang-card" id="lang-card" onclick="event.stopPropagation()">
+        <div class="lang-option" onclick="changeLang('en')" id="opt-en"><span>English</span><span>EN</span></div>
+        <div class="lang-option" onclick="changeLang('ar')" id="opt-ar"><span>العربية</span><span>AR</span></div>
+    </div>
+</div>
+
+<div class="container">
+    <header class="reveal">
+        <div class="logo">PassPrivacy</div>
+        <button onclick="openLangPop()" id="lang-btn" style="background:var(--glass-thick); border:none; padding:8px 16px; border-radius:10px; color:var(--accent); font-weight:700; cursor:pointer; font-size: 14px;">Lang</button>
+    </header>
+
+    <div class="app-intro reveal">
+        <h3 id="ui-intro-title">Your Privacy First</h3>
+        <p id="ui-intro-desc">Securely save your passwords. A fast and simple app to organize your accounts.</p>
+    </div>
+
+    <div class="stats reveal">
+        <div class="stat-card">
+            <span id="ui-t-apps">Accounts</span>
+            <b id="count-apps">0</b>
+        </div>
+        <div class="stat-card">
+            <span id="ui-t-records">Passwords</span>
+            <b id="count-pass">0</b>
+        </div>
+    </div>
+
+    <div class="search-container reveal">
+        <input type="text" class="search-glass" id="search-input" oninput="renderApps()">
+    </div>
+
+    <div class="input-group reveal">
+        <input type="text" id="app-input">
+        <button class="btn-plus" onclick="addApp()" id="icon-add-main"></button>
+    </div>
+
+    <div id="list-container"></div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeSheet()">
+    <div class="sheet" id="sheet" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding: 0 5px;">
+            <h2 id="sheet-title" style="margin:0; font-size:20px; font-weight:800;"></h2>
+            <button onclick="deleteApp()" style="color:#FF3B30; border:none; background:none; font-weight:700; cursor:pointer; font-size:14px;" id="ui-del">Delete</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="password" id="pass-val-input">
+            <button class="btn-plus btn-icon" onclick="toggleMainPass(this)" id="btn-eye-main"></button>
+            <button class="btn-plus" onclick="genRandomPass()" style="background:var(--secondary); margin-left:5px;" id="btn-gen-main"></button>
+            <button class="btn-plus" onclick="savePass()" style="margin-left:5px;" id="btn-save-main"></button>
+        </div>
+        
+        <div id="pass-list"></div>
+    </div>
+</div>
+
+<script>
+    // --- SVGs Icons ---
+    const iconEye = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+    const iconEyeOff = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+    const iconKey = `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>`;
+    const iconCheck = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    const iconPlus = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+    const iconCopy = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    
+    // Tutorial Icons (Larger)
+    const tutMobile = `<svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
+    const tutLock = `<svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+    const tutShield = `<svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`;
+
+    // Inject Initial SVGs
+    document.getElementById('icon-add-main').innerHTML = iconPlus;
+    document.getElementById('btn-eye-main').innerHTML = iconEye;
+    document.getElementById('btn-gen-main').innerHTML = iconKey;
+    document.getElementById('btn-save-main').innerHTML = iconCheck;
+    document.getElementById('icon-tut-1').innerHTML = tutMobile;
+    document.getElementById('icon-tut-2').innerHTML = tutLock;
+    document.getElementById('icon-tut-3').innerHTML = tutShield;
+
+    const i18n = {
+        en: {
+            title: "Your Privacy First", desc: "Securely save your passwords. A fast and simple app to organize your accounts.",
+            t_apps: "Accounts", t_records: "Passwords", search: "Search accounts...", add_h: "App or website name...", pass_h: "Password...", del: "Delete", copied: "Copied!",
+            tut1_t: "Add Account", tut1_d: "Type the app or website name and press (+).",
+            tut2_t: "Generate Password", tut2_d: "Create your own password or let us generate a strong one for you.",
+            tut3_t: "Save & Reveal", tut3_d: "Save it securely. You can copy or reveal it whenever you need.",
+            tut_btn: "Let's Start"
+        },
+        ar: {
+            title: "خصوصيتك أولاً", desc: "احفظ كلمات مرورك بأمان تام. تطبيق بسيط وسريع لترتيب حساباتك بكل سهولة.",
+            t_apps: "الحسابات", t_records: "كلمات المرور", search: "ابحث عن حساب...", add_h: "اسم الحساب الجديد...", pass_h: "كلمة المرور...", del: "حذف", copied: "تم النسخ!",
+            tut1_t: "أضف حساباتك", tut1_d: "اكتب اسم التطبيق أو الموقع واضغط على علامة (+).",
+            tut2_t: "إنشاء كلمة مرور", tut2_d: "تقدر تكتب كلمة مرورك الخاصة، أو تخلينا ننشئ لك واحدة قوية.",
+            tut3_t: "حفظ وإظهار", tut3_d: "احفظ بياناتك، وتقدر بأي وقت تنسخها أو تظهرها متى ما احتجت.",
+            tut_btn: "يلا نبدأ"
+        }
+    };
+
+    // Default to English ('en') as requested
+    let currentLang = localStorage.getItem('pref_lang') || 'en';
+    let apps = JSON.parse(localStorage.getItem('p_data')) || [];
+    let activeId = null;
+
+    function updateUI() {
+        const langData = i18n[currentLang];
+        document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = currentLang;
+        
+        // Update Text
+        document.getElementById('ui-intro-title').innerText = langData.title;
+        document.getElementById('ui-intro-desc').innerText = langData.desc;
+        document.getElementById('ui-t-apps').innerText = langData.t_apps;
+        document.getElementById('ui-t-records').innerText = langData.t_records;
+        document.getElementById('search-input').placeholder = langData.search;
+        document.getElementById('app-input').placeholder = langData.add_h;
+        document.getElementById('pass-val-input').placeholder = langData.pass_h;
+        document.getElementById('ui-del').innerText = langData.del;
+        
+        // Update Tutorial
+        document.getElementById('ui-tut-t1').innerText = langData.tut1_t; document.getElementById('ui-tut-d1').innerText = langData.tut1_d;
+        document.getElementById('ui-tut-t2').innerText = langData.tut2_t; document.getElementById('ui-tut-d2').innerText = langData.tut2_d;
+        document.getElementById('ui-tut-t3').innerText = langData.tut3_t; document.getElementById('ui-tut-d3').innerText = langData.tut3_d;
+        document.getElementById('ui-tut-btn').innerText = langData.tut_btn;
+
+        // Alignment adjustments based on language
+        document.querySelectorAll('input').forEach(el => {
+            el.style.textAlign = currentLang === 'ar' ? 'right' : 'left';
+            el.style.padding = currentLang === 'ar' ? '10px 15px 10px 10px' : '10px 10px 10px 15px';
+        });
+
+        document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
+        document.getElementById('opt-' + currentLang).classList.add('active');
+        
+        renderApps();
+    }
+
+    function openLangPop() {
+        const modal = document.getElementById('lang-modal');
+        modal.style.display = 'flex';
+        setTimeout(() => document.getElementById('lang-card').classList.add('show'), 10);
+    }
+
+    function closeLangPop() {
+        document.getElementById('lang-card').classList.remove('show');
+        setTimeout(() => document.getElementById('lang-modal').style.display = 'none', 300);
+    }
+
+    function changeLang(l) {
+        currentLang = l;
+        localStorage.setItem('pref_lang', l);
+        updateUI();
+        closeLangPop();
+    }
+
+    function toggleMainPass(btn) {
+        const input = document.getElementById('pass-val-input');
+        if(input.type === 'password') {
+            input.type = 'text';
+            btn.innerHTML = iconEyeOff;
+        } else {
+            input.type = 'password';
+            btn.innerHTML = iconEye;
+        }
+    }
+
+    function toggleSavedPass(btn) {
+        const div = btn.previousElementSibling;
+        if(div.innerText === '••••••••') {
+            div.innerText = div.getAttribute('data-pass');
+            btn.innerHTML = iconEyeOff;
+        } else {
+            div.innerText = '••••••••';
+            btn.innerHTML = iconEye;
+        }
+    }
+
+    function genRandomPass() {
+        const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$&*";
+        let res = "";
+        for(let i=0; i<12; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+        const input = document.getElementById('pass-val-input');
+        input.value = res;
+        input.type = 'text'; 
+        document.getElementById('btn-eye-main').innerHTML = iconEyeOff;
+    }
+
+    function renderApps() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const container = document.getElementById('list-container');
+        const filtered = apps.filter(a => a.name.toLowerCase().includes(query));
+
+        document.getElementById('count-apps').innerText = apps.length;
+        document.getElementById('count-pass').innerText = apps.reduce((a, b) => a + b.passwords.length, 0);
+
+        container.innerHTML = filtered.map((app, i) => `
+            <div class="app-item reveal active" style="animation-delay: ${i*0.05}s" onclick="openSheet('${app.id}')">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="icon-box">${app.name.charAt(0).toUpperCase()}</div>
+                    <div style="text-align:${currentLang === 'ar' ? 'right' : 'left'}">
+                        <div style="font-weight:700; font-size:16px;">${app.name}</div>
+                        <div style="font-size:12px; color:var(--text-sec); margin-top:2px;">${app.passwords.length} ${i18n[currentLang].t_records}</div>
+                    </div>
+                </div>
+                <div style="color:#D1D1D6; transform: scaleX(${currentLang === 'ar' ? -1 : 1})">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openSheet(id) {
+        activeId = id;
+        const app = apps.find(a => a.id === id);
+        document.getElementById('sheet-title').innerText = app.name;
+        document.getElementById('pass-val-input').value = '';
+        document.getElementById('pass-val-input').type = 'password';
+        document.getElementById('btn-eye-main').innerHTML = iconEye;
+        renderPasswords();
+        document.getElementById('overlay').style.display = 'flex';
+        setTimeout(() => document.getElementById('sheet').classList.add('active'), 10);
+    }
+
+    function closeSheet() {
+        document.getElementById('sheet').classList.remove('active');
+        setTimeout(() => document.getElementById('overlay').style.display = 'none', 400);
+    }
+
+    function renderPasswords() {
+        const app = apps.find(a => a.id === activeId);
+        const list = document.getElementById('pass-list');
+        list.innerHTML = app.passwords.map((p, i) => `
+            <div class="app-item" style="box-shadow:none; border:1px solid rgba(0,0,0,0.05);">
+                <div data-pass="${p}" style="font-family:monospace; font-size:16px; font-weight:700; flex:1; text-align:${currentLang==='ar'?'right':'left'}; letter-spacing: 1px; overflow:hidden; text-overflow:ellipsis;">••••••••</div>
+                <button onclick="toggleSavedPass(this)" style="border:none; background:none; color:var(--text-sec); cursor:pointer; padding:5px;">${iconEye}</button>
+                <button onclick="copyP('${p}')" style="border:none; background:none; color:var(--accent); cursor:pointer; padding:5px;">${iconCopy}</button>
+            </div>
+        `).join('');
+    }
+
+    function savePass() {
+        const val = document.getElementById('pass-val-input').value.trim();
+        if(!val) return;
+        apps.find(a => a.id === activeId).passwords.unshift(val); // Add to top
+        document.getElementById('pass-val-input').value = '';
+        document.getElementById('pass-val-input').type = 'password';
+        document.getElementById('btn-eye-main').innerHTML = iconEye;
+        saveData();
+        renderPasswords();
+    }
+
+    function copyP(t) {
+        navigator.clipboard.writeText(t);
+        const toast = document.getElementById('toast');
+        toast.innerText = i18n[currentLang].copied;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function addApp() {
+        const name = document.getElementById('app-input').value.trim();
+        if (!name) return;
+        apps.unshift({ id: Date.now().toString(), name, passwords: [] });
+        document.getElementById('app-input').value = '';
+        saveData();
+    }
+
+    function deleteApp() {
+        if(confirm(currentLang === 'ar' ? "هل أنت متأكد من الحذف؟" : "Are you sure?")) {
+            apps = apps.filter(a => a.id !== activeId);
+            saveData();
+            closeSheet();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('p_data', JSON.stringify(apps));
+        renderApps();
+    }
+
+    let tutInterval;
+    let currentTutStep = 1;
+
+    function runTutorial() {
+        if(localStorage.getItem('tut_seen_v2')) {
+            document.getElementById('tutorial-overlay').style.display = 'none';
+            triggerReveals();
+            return;
+        }
+        
+        tutInterval = setInterval(() => {
+            if(currentTutStep < 3) {
+                document.querySelector(`.step-${currentTutStep}`).classList.remove('active');
+                document.querySelector(`.dot-${currentTutStep}`).classList.remove('active');
+                currentTutStep++;
+                document.querySelector(`.step-${currentTutStep}`).classList.add('active');
+                document.querySelector(`.dot-${currentTutStep}`).classList.add('active');
+            } else {
+                clearInterval(tutInterval);
+            }
+        }, 3000); 
+    }
+
+    function closeTutorial() {
+        clearInterval(tutInterval);
+        localStorage.setItem('tut_seen_v2', 'true');
+        const overlay = document.getElementById('tutorial-overlay');
+        overlay.classList.add('hidden');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            triggerReveals();
+        }, 600);
+    }
+
+    function triggerReveals() {
+        const elements = document.querySelectorAll('.reveal');
+        elements.forEach((el, index) => {
+            setTimeout(() => el.classList.add('active'), index * 80);
+        });
+    }
+
+    window.onload = () => {
+        updateUI();
+        runTutorial();
+    };
+</script>
+</body>
+</html>
